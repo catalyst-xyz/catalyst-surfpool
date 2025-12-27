@@ -1,0 +1,13 @@
+:8080 {
+    handle /rpc* {
+        reverse_proxy localhost:8899
+    }
+
+    handle /ws* {
+        reverse_proxy localhost:8900
+    }
+
+    handle /* {
+        reverse_proxy localhost:18488
+    }
+}

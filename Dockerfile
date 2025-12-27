@@ -25,28 +25,28 @@ FROM debian:bullseye-slim
 # Set default network host
 ENV SURFPOOL_NETWORK_HOST=0.0.0.0
 
-RUN apt update && apt install -y ca-certificates libssl-dev
+RUN apt update && apt install -y ca-certificates libssl-dev wget
+
+# Install Caddy for reverse proxy
+RUN wget -O /tmp/caddy.tar.gz https://github.com/caddyserver/caddy/releases/download/v2.7.6/caddy_2.7.6_linux_amd64.tar.gz && \
+    tar -xzf /tmp/caddy.tar.gz -C /usr/local/bin caddy && \
+    rm /tmp/caddy.tar.gz
 
 COPY --from=build /out/ /bin/
+COPY Caddyfile /etc/caddy/Caddyfile
 
 WORKDIR /workspace
 
-EXPOSE 8899 8900 18488
+# Single port for Railway (Caddy reverse proxy)
+EXPOSE 8080
 
-# Create a shell script that provides default behavior
+# Create entrypoint that starts both Caddy and surfpool
 RUN echo '#!/bin/bash\n\
-# Default behavior for surfpool\n\
-# Can be overridden by passing arguments to docker run\n\
+# Start Caddy reverse proxy in background\n\
+caddy start --config /etc/caddy/Caddyfile\n\
 \n\
-if [ $# -eq 0 ]; then\n\
-    # Default behavior - start surfnet with default configuration\n\
-    echo "Starting surfpool with default configuration..."\n\
-    exec surfpool start --no-tui\n\
-else\n\
-    # Use provided arguments\n\
-    # Note: make sure the cli argument "--no-tui" is being provided.\n\
-    echo "Starting surfpool with custom arguments: $@"\n\
-    exec surfpool "$@"\n\
-fi' > /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
+# Start surfpool\n\
+exec surfpool start --no-tui\n\
+' > /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
