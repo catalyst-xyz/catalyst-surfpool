@@ -1,13 +1,21 @@
 :8080 {
-    handle /rpc* {
-        reverse_proxy localhost:8899
+    # Studio UI at /ui
+    handle /ui* {
+        uri strip_prefix /ui
+        reverse_proxy localhost:18488
     }
 
-    handle /ws* {
+    # WebSocket connections (auto-detected by upgrade header)
+    @websocket {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    handle @websocket {
         reverse_proxy localhost:8900
     }
 
+    # Everything else goes to RPC (root path = RPC)
     handle /* {
-        reverse_proxy localhost:18488
+        reverse_proxy localhost:8899
     }
 }
