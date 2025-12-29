@@ -1,6 +1,7 @@
 use std::{
     cmp::Ordering,
     collections::{BTreeMap, HashMap},
+    env,
     fmt,
     path::PathBuf,
     str::FromStr,
@@ -27,7 +28,10 @@ use uuid::Uuid;
 
 use crate::SvmFeatureConfig;
 
-pub const DEFAULT_RPC_URL: &str = "https://api.mainnet-beta.solana.com";
+pub const FALLBACK_RPC_URL: &str = "https://api.mainnet-beta.solana.com";
+pub static DEFAULT_RPC_URL: once_cell::sync::Lazy<String> = once_cell::sync::Lazy::new(|| {
+    env::var("SURFPOOL_MAINNET_RPC_URL").unwrap_or_else(|_| FALLBACK_RPC_URL.to_string())
+});
 pub const DEFAULT_RPC_PORT: u16 = 8899;
 pub const DEFAULT_WS_PORT: u16 = 8900;
 pub const DEFAULT_STUDIO_PORT: u16 = 8488;
